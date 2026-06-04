@@ -1,0 +1,89 @@
+<div class="page">
+  <header class="page-header">
+    <div>
+      <h2>Gestión de Usuarios</h2>
+      <p class="subtitle">Solo ADMIN puede registrar nuevos usuarios</p>
+    </div>
+    <button class="btn-primary" (click)="openModal()">+ Nuevo usuario</button>
+  </header>
+
+  @if (successMsg()) {
+    <div class="success-msg">{{ successMsg() }}</div>
+  }
+
+  <div class="info-card">
+    <h3>Roles del sistema</h3>
+    <div class="roles-grid">
+      <div class="role-item">
+        <span class="role-badge admin">ADMIN</span>
+        <p>Acceso total a todas las sedes. Puede gestionar sedes, todos los estudiantes y crear usuarios.</p>
+      </div>
+      <div class="role-item">
+        <span class="role-badge operador">OPERADOR</span>
+        <p>Acceso limitado a su sede asignada. Solo ve y gestiona estudiantes de su propia sede.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="info-card">
+    <h3>Usuarios del seed</h3>
+    <table>
+      <thead>
+        <tr><th>Email</th><th>Rol</th><th>Sede</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>admin&#64;dnamusic.co</td><td><span class="role-badge admin">ADMIN</span></td><td>Todas</td></tr>
+        <tr><td>operador.bog&#64;dnamusic.co</td><td><span class="role-badge operador">OPERADOR</span></td><td>Bogotá</td></tr>
+        <tr><td>operador.med&#64;dnamusic.co</td><td><span class="role-badge operador">OPERADOR</span></td><td>Medellín</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (showModal()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>Nuevo Usuario</h3>
+
+      <div class="form-group">
+        <label>Nombre completo *</label>
+        <input type="text" [(ngModel)]="form.nombre" placeholder="Juan Pérez" />
+      </div>
+      <div class="form-group">
+        <label>Email *</label>
+        <input type="email" [(ngModel)]="form.email" placeholder="juan@dnamusic.co" />
+      </div>
+      <div class="form-group">
+        <label>Contraseña * <span class="hint">(mín. 8 chars, 1 mayúscula, 1 número)</span></label>
+        <input type="password" [(ngModel)]="form.password" placeholder="••••••••" />
+      </div>
+      <div class="form-group">
+        <label>Rol *</label>
+        <select [(ngModel)]="form.role" (ngModelChange)="onRoleChange()">
+          <option value="OPERADOR">OPERADOR</option>
+          <option value="ADMIN">ADMIN</option>
+        </select>
+      </div>
+      @if (form.role === 'OPERADOR') {
+        <div class="form-group">
+          <label>Sede asignada *</label>
+          <select [(ngModel)]="form.sedeId">
+            <option value="">Selecciona una sede</option>
+            @for (sede of sedes(); track sede.id) {
+              <option [value]="sede.id">{{ sede.nombre }} — {{ sede.ciudad }}</option>
+            }
+          </select>
+        </div>
+      }
+
+      @if (formError()) { <div class="error-msg">{{ formError() }}</div> }
+
+      <div class="modal-actions">
+        <button class="btn-ghost" (click)="closeModal()" [disabled]="saving()">Cancelar</button>
+        <button class="btn-primary" (click)="submit()" [disabled]="saving()">
+          {{ saving() ? 'Creando...' : 'Crear usuario' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

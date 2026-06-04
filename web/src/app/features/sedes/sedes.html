@@ -1,0 +1,88 @@
+<div class="page">
+  <header class="page-header">
+    <h2>Sedes</h2>
+    <button class="btn-primary" (click)="openCreate()">+ Nueva sede</button>
+  </header>
+
+  @if (successMsg()) { <div class="success-msg">{{ successMsg() }}</div> }
+  @if (error()) { <div class="error-msg">{{ error() }}</div> }
+
+  @if (loading()) {
+    <div class="loading">Cargando...</div>
+  } @else {
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Ciudad</th>
+            <th>Dirección</th>
+            <th>Estudiantes</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (sede of sedes(); track sede.id) {
+            <tr>
+              <td><strong>{{ sede.nombre }}</strong></td>
+              <td>{{ sede.ciudad }}</td>
+              <td>{{ sede.direccion }}</td>
+              <td>{{ sede._count?.estudiantes ?? 0 }}</td>
+              <td>
+                <button
+                  [class]="sede.activa ? 'badge badge-activo' : 'badge badge-inactivo'"
+                  (click)="toggleActiva(sede)"
+                  title="Click para cambiar estado"
+                >
+                  {{ sede.activa ? 'Activa' : 'Inactiva' }}
+                </button>
+              </td>
+              <td class="actions">
+                <button class="btn-edit" (click)="openEdit(sede)">Editar</button>
+                <button class="btn-danger-sm" (click)="delete(sede)">Eliminar</button>
+              </td>
+            </tr>
+          } @empty {
+            <tr><td colspan="6" class="empty">No hay sedes registradas.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+@if (showModal()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>{{ editingId() ? 'Editar sede' : 'Nueva sede' }}</h3>
+
+      <div class="form-group">
+        <label>Nombre *</label>
+        <input type="text" [(ngModel)]="form.nombre" placeholder="DNA Music Barranquilla" />
+      </div>
+      <div class="form-group">
+        <label>Ciudad *</label>
+        <input type="text" [(ngModel)]="form.ciudad" placeholder="Barranquilla" />
+      </div>
+      <div class="form-group">
+        <label>Dirección *</label>
+        <input type="text" [(ngModel)]="form.direccion" placeholder="Calle 72 # 57-30" />
+      </div>
+      <div class="form-group toggle-group">
+        <label>Activa</label>
+        <input type="checkbox" [(ngModel)]="form.activa" id="activa-check" />
+        <label for="activa-check" class="toggle-label">{{ form.activa ? 'Sí' : 'No' }}</label>
+      </div>
+
+      @if (formError()) { <div class="error-msg">{{ formError() }}</div> }
+
+      <div class="modal-actions">
+        <button class="btn-ghost" (click)="closeModal()" [disabled]="saving()">Cancelar</button>
+        <button class="btn-primary" (click)="submit()" [disabled]="saving()">
+          {{ saving() ? 'Guardando...' : (editingId() ? 'Actualizar' : 'Crear sede') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

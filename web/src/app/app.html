@@ -4,6 +4,8 @@
     <div class="nav-links">
       <a routerLink="/estudiantes" routerLinkActive="active">Estudiantes</a>
       @if (auth.isAdmin()) {
+        <a routerLink="/sedes" routerLinkActive="active">Sedes</a>
+        <a routerLink="/usuarios" routerLinkActive="active">Usuarios</a>
         <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
       }
     </div>

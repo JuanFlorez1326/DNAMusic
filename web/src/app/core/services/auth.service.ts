@@ -12,6 +12,14 @@ export interface User {
   sedeId: string | null;
 }
 
+export interface RegisterUserDto {
+  nombre: string;
+  email: string;
+  password: string;
+  role: 'ADMIN' | 'OPERADOR';
+  sedeId?: string;
+}
+
 interface LoginResponse {
   token: string;
   user: User;
@@ -46,6 +54,17 @@ export class AuthService {
     localStorage.removeItem(this.USER_KEY);
     this._user.set(null);
     this.router.navigate(['/login']);
+  }
+
+  register(data: RegisterUserDto) {
+    return this.http.post<{ message: string; user: { id: string; email: string; role: string } }>(
+      `${environment.apiUrl}/auth/register`,
+      data,
+    );
+  }
+
+  me() {
+    return this.http.get<User>(`${environment.apiUrl}/auth/me`);
   }
 
   getToken(): string | null {

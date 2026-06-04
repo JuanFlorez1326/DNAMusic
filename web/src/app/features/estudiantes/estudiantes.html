@@ -5,22 +5,17 @@
       <span class="total-badge">{{ total() }} registros</span>
     </div>
     <div class="header-actions">
-      <span class="user-info">
-        {{ auth.user()?.nombre }} · {{ auth.user()?.role }}
-      </span>
-      <button class="btn-primary" (click)="openModal()">+ Nuevo estudiante</button>
+      <span class="user-info">{{ auth.user()?.nombre }} · {{ auth.user()?.role }}</span>
+      @if (auth.isAdmin()) {
+        <button class="btn-secondary" (click)="openImport()" title="Importar desde DummyJSON API">↓ Importar</button>
+      }
+      <button class="btn-primary" (click)="openCreate()">+ Nuevo estudiante</button>
     </div>
   </header>
 
   <div class="filters">
-    <input
-      type="text"
-      placeholder="Buscar por nombre, email o documento..."
-      [value]="filterSearch()"
-      (input)="filterSearch.set($any($event.target).value)"
-      class="search-input"
-    />
-
+    <input type="text" placeholder="Buscar por nombre, email o documento..."
+      [value]="filterSearch()" (input)="filterSearch.set($any($event.target).value)" class="search-input" />
     @if (auth.isAdmin()) {
       <select [value]="filterSedeId()" (change)="filterSedeId.set($any($event.target).value)">
         <option value="">Todas las sedes</option>
@@ -29,25 +24,18 @@
         }
       </select>
     }
-
     <select [value]="filterEstado()" (change)="filterEstado.set($any($event.target).value)">
       <option value="">Todos los estados</option>
       <option value="ACTIVO">Activo</option>
       <option value="INACTIVO">Inactivo</option>
       <option value="RETIRADO">Retirado</option>
     </select>
-
     <button class="btn-secondary" (click)="applyFilter()">Filtrar</button>
     <button class="btn-ghost" (click)="clearFilters()">Limpiar</button>
   </div>
 
-  @if (successMsg()) {
-    <div class="success-msg">{{ successMsg() }}</div>
-  }
-
-  @if (error()) {
-    <div class="error-msg">{{ error() }}</div>
-  }
+  @if (successMsg()) { <div class="success-msg">{{ successMsg() }}</div> }
+  @if (error()) { <div class="error-msg">{{ error() }}</div> }
 
   @if (loading()) {
     <div class="loading">Cargando...</div>
@@ -56,15 +44,8 @@
       <table>
         <thead>
           <tr>
-            <th>Nombre</th>
-            <th>Email</th>
-            <th>Documento</th>
-            <th>Teléfono</th>
-            <th>Sede</th>
-            <th>Programa</th>
-            <th>Estado</th>
-            <th>Inscripción</th>
-            <th>Acciones</th>
+            <th>Nombre</th><th>Email</th><th>Documento</th><th>Teléfono</th>
+            <th>Sede</th><th>Programa</th><th>Estado</th><th>Inscripción</th><th>Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -76,20 +57,15 @@
               <td>{{ est.telefono }}</td>
               <td>{{ est.sede?.nombre ?? '—' }}</td>
               <td>{{ est.programa }}</td>
-              <td>
-                <span [class]="'badge ' + estadoClass(est.estado)">{{ est.estado }}</span>
-              </td>
+              <td><span [class]="'badge ' + estadoClass(est.estado)">{{ est.estado }}</span></td>
               <td>{{ est.fechaInscripcion | date: 'dd/MM/yyyy' }}</td>
-              <td>
-                <button class="btn-danger-sm" (click)="deleteEstudiante(est.id, est.nombreCompleto)">
-                  Eliminar
-                </button>
+              <td class="actions">
+                <button class="btn-edit" (click)="openEdit(est)">Editar</button>
+                <button class="btn-danger-sm" (click)="deleteEstudiante(est.id, est.nombreCompleto)">Eliminar</button>
               </td>
             </tr>
           } @empty {
-            <tr>
-              <td colspan="9" class="empty">No se encontraron estudiantes.</td>
-            </tr>
+            <tr><td colspan="9" class="empty">No se encontraron estudiantes.</td></tr>
           }
         </tbody>
       </table>
@@ -105,47 +81,41 @@
   }
 </div>
 
+<!-- Create / Edit Modal -->
 @if (showModal()) {
   <div class="modal-overlay" (click)="closeModal()">
     <div class="modal" (click)="$event.stopPropagation()">
-      <h3>Nuevo Estudiante</h3>
-
+      <h3>{{ editingId() ? 'Editar Estudiante' : 'Nuevo Estudiante' }}</h3>
       <div class="form-grid">
         <div class="form-group">
           <label>Nombre completo *</label>
           <input type="text" [(ngModel)]="form.nombreCompleto" placeholder="Ana López" />
         </div>
-
         <div class="form-group">
           <label>Email *</label>
-          <input type="email" [(ngModel)]="form.email" placeholder="estudiante@email.com" />
+          <input type="email" [(ngModel)]="form.email" placeholder="ana@gmail.com" [disabled]="!!editingId()" />
         </div>
-
         <div class="form-group">
           <label>Teléfono *</label>
           <input type="text" [(ngModel)]="form.telefono" placeholder="3001234567" />
         </div>
-
         <div class="form-group">
           <label>Documento *</label>
-          <input type="text" [(ngModel)]="form.documento" placeholder="1020304050" />
+          <input type="text" [(ngModel)]="form.documento" placeholder="1020304050" [disabled]="!!editingId()" />
         </div>
-
         <div class="form-group">
           <label>Sede *</label>
-          <select [(ngModel)]="form.sedeId" [disabled]="!auth.isAdmin()">
+          <select [(ngModel)]="form.sedeId" [disabled]="!auth.isAdmin() || !!editingId()">
             <option value="">Selecciona una sede</option>
             @for (sede of sedes(); track sede.id) {
               <option [value]="sede.id">{{ sede.nombre }}</option>
             }
           </select>
         </div>
-
         <div class="form-group">
           <label>Programa *</label>
           <input type="text" [(ngModel)]="form.programa" placeholder="Piano Clásico" />
         </div>
-
         <div class="form-group">
           <label>Estado</label>
           <select [(ngModel)]="form.estado">
@@ -155,15 +125,43 @@
           </select>
         </div>
       </div>
-
-      @if (formError()) {
-        <div class="error-msg">{{ formError() }}</div>
-      }
-
+      @if (formError()) { <div class="error-msg">{{ formError() }}</div> }
       <div class="modal-actions">
         <button class="btn-ghost" (click)="closeModal()" [disabled]="saving()">Cancelar</button>
         <button class="btn-primary" (click)="submitForm()" [disabled]="saving()">
-          {{ saving() ? 'Guardando...' : 'Crear estudiante' }}
+          {{ saving() ? 'Guardando...' : (editingId() ? 'Actualizar' : 'Crear estudiante') }}
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Import Modal -->
+@if (showImportModal()) {
+  <div class="modal-overlay" (click)="closeImport()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <h3>Importar desde DummyJSON</h3>
+      <p class="import-desc">Trae usuarios de la API pública <strong>dummyjson.com</strong> y los registra como estudiantes.</p>
+      <div class="form-group">
+        <label>Sede destino *</label>
+        <select [(ngModel)]="importSedeId">
+          <option value="">Selecciona una sede</option>
+          @for (sede of sedes(); track sede.id) {
+            <option [value]="sede.id">{{ sede.nombre }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Cantidad a importar (máx. 20)</label>
+        <input type="number" [(ngModel)]="importLimit" min="1" max="20" />
+      </div>
+      @if (importResult()) {
+        <div [class]="importResult().includes('Error') ? 'error-msg' : 'success-msg'">{{ importResult() }}</div>
+      }
+      <div class="modal-actions">
+        <button class="btn-ghost" (click)="closeImport()" [disabled]="importing()">Cerrar</button>
+        <button class="btn-primary" (click)="submitImport()" [disabled]="importing()">
+          {{ importing() ? 'Importando...' : 'Importar' }}
         </button>
       </div>
     </div>
