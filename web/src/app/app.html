@@ -1,0 +1,16 @@
+@if (auth.isLoggedIn()) {
+  <nav class="navbar">
+    <div class="nav-brand">DNA Music</div>
+    <div class="nav-links">
+      <a routerLink="/estudiantes" routerLinkActive="active">Estudiantes</a>
+      @if (auth.isAdmin()) {
+        <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      }
+    </div>
+    <button class="nav-logout" (click)="auth.logout()">Cerrar sesión</button>
+  </nav>
+}
+
+<main>
+  <router-outlet />
+</main>

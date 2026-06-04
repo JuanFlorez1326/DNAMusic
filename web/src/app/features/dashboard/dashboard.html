@@ -1,0 +1,44 @@
+<div class="page">
+  <header class="page-header">
+    <h2>Dashboard</h2>
+    <a routerLink="/estudiantes" class="btn-secondary">Ver Estudiantes →</a>
+  </header>
+
+  @if (loading()) {
+    <div class="loading">Cargando estadísticas...</div>
+  } @else if (error()) {
+    <div class="error-msg">{{ error() }}</div>
+  } @else if (stats()) {
+    <div class="stats-grid">
+
+      @if (stats()!.sedeConMasActivos) {
+        <div class="stat-card highlight">
+          <div class="stat-label">Sede con más estudiantes activos</div>
+          <div class="stat-value">{{ stats()!.sedeConMasActivos!.sede!.nombre }}</div>
+          <div class="stat-sub">{{ stats()!.sedeConMasActivos!.totalActivos }} estudiantes activos</div>
+        </div>
+      }
+
+      <div class="stat-card">
+        <div class="stat-label">Total por estado</div>
+        @for (item of stats()!.totalPorEstado; track item.estado) {
+          <div class="stat-row">
+            <span [class]="'badge estado-' + item.estado.toLowerCase()">{{ item.estado }}</span>
+            <span class="stat-num">{{ item.total }}</span>
+          </div>
+        }
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">Total por sede</div>
+        @for (item of stats()!.totalPorSede; track item.sede.id) {
+          <div class="stat-row">
+            <span>{{ item.sede.nombre }}</span>
+            <span class="stat-num">{{ item.total }}</span>
+          </div>
+        }
+      </div>
+
+    </div>
+  }
+</div>
