@@ -1,0 +1,65 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  OPERADOR
+}
+
+enum EstadoEstudiante {
+  ACTIVO
+  INACTIVO
+  RETIRADO
+}
+
+model User {
+  id        String   @id @default(cuid())
+  nombre    String
+  email     String   @unique
+  password  String
+  role      Role
+  sedeId    String?
+  sede      Sede?    @relation(fields: [sedeId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Sede {
+  id          String       @id @default(cuid())
+  nombre      String
+  ciudad      String
+  direccion   String
+  activa      Boolean      @default(true)
+  users       User[]
+  estudiantes Estudiante[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("sedes")
+}
+
+model Estudiante {
+  id               String           @id @default(cuid())
+  nombreCompleto   String
+  email            String           @unique
+  telefono         String
+  documento        String           @unique
+  sedeId           String
+  sede             Sede             @relation(fields: [sedeId], references: [id])
+  programa         String
+  estado           EstadoEstudiante @default(ACTIVO)
+  fechaInscripcion DateTime         @default(now())
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@map("estudiantes")
+}
