@@ -99,7 +99,21 @@ Separación clásica por responsabilidad. Cada capa tiene una sola razón para c
 
 ### Frontend: Angular 20 standalone + signals
 
-Angular 20 con componentes standalone (sin NgModules) y signals para estado reactivo sin RxJS para estado UI simple. Las llamadas HTTP sí usan Observables (lo que Angular HTTP Client devuelve naturalmente). Lazy loading en todas las rutas.
+Angular 20.3 con componentes standalone (sin NgModules) y signals para estado reactivo sin RxJS para estado UI simple. Las llamadas HTTP sí usan Observables (lo que Angular HTTP Client devuelve naturalmente). Lazy loading en todas las rutas.
+
+Las rutas del frontend son: `/login`, `/estudiantes`, `/sedes`, `/usuarios`, `/dashboard`. Todas protegidas con `authGuard` excepto `/login` (que usa `guestGuard` para redirigir si ya hay sesión activa).
+
+### Nginx para el frontend en Docker
+
+En desarrollo (`npm start`) Angular usa su propio dev server. En Docker, el frontend se construye con un **multi-stage Dockerfile**:
+
+1. **Stage builder** (Node 22-alpine): ejecuta `ng build`, genera los estáticos en `dist/web/browser/`
+2. **Stage runtime** (nginx-alpine): copia solo el build y sirve con `nginx.conf`
+
+Nginx se encarga de tres cosas concretas:
+- **SPA fallback** (`try_files $uri $uri/ /index.html`): todas las rutas que no corresponden a un archivo real (como `/estudiantes/123`) se resuelven al `index.html` para que Angular Router las maneje en el cliente. Sin esto, un F5 en cualquier ruta devuelve 404.
+- **Caché agresiva de assets** (`expires 1y`, `Cache-Control: public, immutable`): los JS/CSS/fuentes generados por Angular llevan hash en el nombre (`main.abc123.js`), así que se pueden cachear para siempre sin riesgo de servir contenido viejo.
+- **Gzip** en texto, CSS, JS y JSON para reducir el tamaño de transferencia.
 
 ---
 
@@ -201,48 +215,37 @@ Angular 20 con componentes standalone (sin NgModules) y signals para estado reac
 
 ---
 
-## 8. Comandos Git utilizados
+## 8. Historial de commits
 
-```bash
-# Setup inicial
-git init
-git remote add origin https://github.com/...
+El proyecto se desarrolló en `main` con commits incrementales, cada uno con un propósito claro:
 
-# Primera estructura
-git checkout -b feat/project-setup
-git add api/package.json api/tsconfig.json api/prisma/schema.prisma
-git commit -m "chore: initialize api project with TypeScript and Prisma"
-
-# Auth
-git checkout -b feat/auth-jwt
-git add api/src/controllers/auth.controller.ts api/src/middlewares/
-git commit -m "feat(auth): implement JWT login with bcrypt, rate limiting, and generic error messages"
-
-# Sedes
-git checkout -b feat/sedes-crud
-git commit -m "feat(sedes): add CRUD endpoints restricted to ADMIN role"
-
-# Estudiantes
-git checkout -b feat/estudiantes-crud
-git commit -m "feat(estudiantes): add CRUD with role-based sede scoping for OPERADOR"
-git commit -m "feat(stats): add aggregated stats endpoint using raw SQL queries"
-
-# Frontend
-git checkout -b feat/angular-frontend
-git commit -m "feat(web): bootstrap Angular 20 standalone app with routing and HTTP interceptor"
-git commit -m "feat(web): implement login page with JWT storage and auth guard"
-git commit -m "feat(web): implement student list with sede filter and create modal"
-git commit -m "feat(web): add admin dashboard with stats from aggregated API"
-
-# Docs
-git checkout -b docs/technical-docs
-git commit -m "docs: add analisis_tecnico, git_respuestas, and complete README"
-
-# Merge a main
-git checkout main
-git merge --no-ff feat/auth-jwt -m "feat(auth): merge JWT authentication"
-# ... y así sucesivamente
 ```
+c4f3f07  Initial commit
+910d236  feat: API configuration
+ccf9a28  feat: Web configuration
+c16f14a  feat: Add core dependencies for logging, API docs, and testing
+5edfb7e  feat: Implement centralized logging, Swagger UI, and external data import endpoint
+571acf3  chore: Configure Jest and mock Prisma client for testing
+6267c2e  test: Add unit and integration tests for API endpoints
+0eadfe9  feat: Sedes, users and students
+546fe30  feat: Local docker and docs
+cbb98ae  feat: Redme and docs server
+cefcb5e  docs: update readme
+```
+
+| Commit | Qué incluye |
+|--------|-------------|
+| `Initial commit` | README inicial con la descripción del proyecto |
+| `feat: API configuration` | Todo el backend: estructura Express + TypeScript, schema Prisma (sedes/users/estudiantes), seed con datos de prueba, controllers de auth/sedes/estudiantes/stats, middlewares JWT + RBAC + Zod, rutas, Dockerfile del API |
+| `feat: Web configuration` | Todo el frontend Angular 20: bootstrap del proyecto, componentes standalone (login, dashboard, estudiantes), guards, interceptor HTTP con JWT, estilos base, Dockerfile nginx |
+| `feat: Add core dependencies` | Instalación de pino (logging), swagger-ui-express + swagger-jsdoc (docs), jest + supertest (testing) en package.json |
+| `feat: Implement logging, Swagger, external import` | Logger centralizado con pino, spec completo de Swagger con todos los endpoints documentados, endpoint `POST /api/external/import` que consume dummyjson.com |
+| `chore: Configure Jest` | jest.config.ts, mock del cliente Prisma para tests aislados, setup global de tests |
+| `test: Add unit and integration tests` | 28 tests cubriendo auth (login, register, me), sedes (CRUD + permisos), y estudiantes (scoping por sede, errores 400/403/404/409) |
+| `feat: Sedes, users and students` | Módulos Angular de sedes y usuarios (CRUD completo), refactor del módulo estudiantes con modelos tipados, servicios HTTP separados por feature, routing lazy loading |
+| `feat: Local docker and docs` | docker-compose.yml con los 3 servicios (db + api + web), .gitignore, analisis_tecnico.md y git_respuestas.md |
+| `feat: Redme and docs server` | README completo con instrucciones, credenciales, decisiones técnicas y diagramas; ajuste del server.ts para Swagger |
+| `docs: update readme` | Corrección menor en README y api/.env.example |
 
 ---
 
@@ -252,7 +255,7 @@ Todos los ítems opcionales de la prueba fueron implementados:
 
 | Bonus | Implementación |
 |-------|---------------|
-| **Tests de integración** | Jest + Supertest, 28 tests que cubren auth, role scoping de estudiantes, y casos de error (409, 403, 404, 400) |
+| **Tests de integración** | Jest + Supertest, 27 tests que cubren auth (8), sedes (8) y estudiantes (11), incluyendo role scoping y casos de error (409, 403, 404, 400) |
 | **Swagger / OpenAPI** | Spec completo en `api/src/docs/swagger.ts`, disponible en `/api/docs` |
 | **Logs estructurados** | `pino` con `pino-http` — JSON en producción, pretty en desarrollo, deshabilitado en test |
 | **Paginación y búsqueda** | `GET /api/estudiantes?page=1&limit=20&search=ana&sedeId=x&estado=ACTIVO` |
@@ -270,6 +273,7 @@ Todos los ítems opcionales de la prueba fueron implementados:
 | POST   | /api/auth/register        | Sí   | ADMIN             | Crear usuario                      |
 | GET    | /api/auth/me              | Sí   | ADMIN, OPERADOR   | Perfil del usuario autenticado     |
 | GET    | /api/sedes                | Sí   | ADMIN, OPERADOR   | Listar sedes                       |
+| GET    | /api/sedes/:id            | Sí   | ADMIN, OPERADOR   | Ver detalle de una sede            |
 | POST   | /api/sedes                | Sí   | ADMIN             | Crear sede                         |
 | PUT    | /api/sedes/:id            | Sí   | ADMIN             | Actualizar sede                    |
 | DELETE | /api/sedes/:id            | Sí   | ADMIN             | Eliminar sede                      |
