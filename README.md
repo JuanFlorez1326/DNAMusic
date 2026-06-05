@@ -8,40 +8,51 @@ ERP modular para DNA Music. Este módulo cubre gestión de estudiantes por sede 
 
 ### Prerrequisitos
 
-- Node.js 18+
-- PostgreSQL 14+ corriendo localmente **O** Docker + Docker Compose
+- Docker + Docker Compose (para cualquiera de las opciones)
+- Node.js 18+ y npm (solo para Opción B)
 
-### Opción A — Con Docker Compose (recomendado, un solo comando)
+---
+
+### Opción A — Todo con Docker (un solo comando)
 
 ```bash
 # Desde la raíz del proyecto
 docker compose up --build
 ```
 
-Esto levanta:
-- PostgreSQL en el puerto 5432
-- API en http://localhost:3000
-- Frontend en http://localhost:4200
+Levanta los 3 servicios en orden: PostgreSQL → API (seed automático) → Frontend nginx.
 
-El seed se ejecuta automáticamente. Listo.
+| Servicio  | URL                              |
+|-----------|----------------------------------|
+| Frontend  | http://localhost:4200            |
+| API       | http://localhost:3000            |
+| Swagger   | http://localhost:3000/api/docs   |
+
+Para detener y conservar datos: `docker compose down`  
+Para detener y borrar la BD (reset completo): `docker compose down -v`
 
 ---
 
-### Opción B — Manual
+### Opción B — DB en Docker, código en local (recomendado para desarrollo)
 
-**1. Backend**
+**1. Levantar solo PostgreSQL:**
+
+```bash
+docker compose up db -d
+```
+
+**2. Configurar y arrancar el API:**
 
 ```bash
 cd api
-cp .env.example .env
-# Edita .env con tu DATABASE_URL de PostgreSQL
+cp .env.example .env        # DATABASE_URL ya apunta a localhost:5432
 npm install
-npx prisma migrate dev --name init
-npx prisma db seed
+npx prisma db push          # crea las tablas
+npx ts-node prisma/seed.ts  # carga datos de prueba
 npm run dev
 ```
 
-**2. Frontend**
+**3. En otra terminal, arrancar el frontend:**
 
 ```bash
 cd web
@@ -49,18 +60,12 @@ npm install
 npm start
 ```
 
-El frontend queda en http://localhost:4200 y llama al backend en http://localhost:3000.
+| Servicio  | URL                              |
+|-----------|----------------------------------|
+| Frontend  | http://localhost:4200            |
+| API       | http://localhost:3000            |
+| Swagger   | http://localhost:3000/api/docs   |
 
----
-
-## 2. URLs de despliegue
-
-| Servicio   | URL                                    |
-|------------|----------------------------------------|
-| Backend    | `https://dnamusic-api.railway.app`     |
-| Frontend   | `https://dnamusic-web.vercel.app`      |
-
-> Reemplazar con las URLs reales una vez desplegado. El backend se despliega en Railway (PostgreSQL incluido), el frontend en Vercel.
 
 ---
 
@@ -78,7 +83,7 @@ El frontend queda en http://localhost:4200 y llama al backend en http://localhos
 
 ### Framework: Express + TypeScript
 
-Elegí Express sobre NestJS para mantener el proyecto simple y sin magia implícita. Para una prueba técnica es más fácil de explicar cada línea que con los decoradores de NestJS. En producción a escala elegiría NestJS.
+Elegí Express sobre NestJS para mantener el proyecto simple y sin magia implícita. Para una prueba técnica es más fácil de explicar cada línea que con los decoradores de NestJS.
 
 ### ORM: Prisma
 
@@ -131,13 +136,13 @@ Angular 20 con componentes standalone (sin NgModules) y signals para estado reac
 
 ## 6. Qué haría diferente con más tiempo
 
-1. **Tests de integración**: con `supertest` + una base de datos de test, cubriría los flujos críticos de auth y scope de roles. Los bugs de "el operador accede a otra sede" son exactamente el tipo que los tests atraparían.
-2. **Swagger/OpenAPI**: `swagger-jsdoc` + `swagger-ui-express` para documentar todos los endpoints con ejemplos de request/response.
-3. **Logs estructurados**: `pino` en lugar de `console.log`, con correlation IDs por request, para poder trazar un request desde el frontend hasta la query de base de datos.
-4. **Refresh tokens + cookies httpOnly**: la combinación más segura para SPAs.
-5. **Soft delete**: en lugar de `delete`, marcar registros con `deletedAt` para auditoría y recuperación accidental.
-6. **Paginación en cursor**: la paginación por offset (`SKIP n`) es ineficiente en tablas grandes. Cambiaría a cursor-based pagination.
-7. **Frontend más completo**: edición de estudiantes, gestión de sedes desde la UI, vista de perfil de usuario.
+1. **Refresh tokens + cookies httpOnly**: la combinación más segura para SPAs. Actualmente uso `localStorage` para el JWT, que es vulnerable a XSS. Con cookies `httpOnly` el token es inaccesible desde JavaScript.
+2. **Blacklist de tokens en Redis**: para logout inmediato en todos los dispositivos sin esperar la expiración natural del JWT.
+3. **Cursor-based pagination**: la paginación por offset (`SKIP n`) es ineficiente en tablas grandes. Cambiaría a cursor-based pagination para consistencia y performance a escala.
+4. **Soft delete**: en lugar de `DELETE` físico, marcar registros con `deletedAt` para auditoría y recuperación accidental. Esencial en un sistema educativo.
+5. **Audit log completo**: tabla `audit_logs` que registre quién creó/modificó/eliminó qué y cuándo, con el payload del cambio.
+6. **Rate limiting persistente con Redis**: el rate limiting actual se pierde en cada reinicio del servidor. Redis mantiene los contadores entre deploys.
+7. **CI/CD pipeline**: GitHub Actions con lint + tests en cada PR, y deploy automático a Railway al hacer merge a `main`.
 
 ---
 
@@ -241,6 +246,22 @@ git merge --no-ff feat/auth-jwt -m "feat(auth): merge JWT authentication"
 
 ---
 
+## Bonus implementados
+
+Todos los ítems opcionales de la prueba fueron implementados:
+
+| Bonus | Implementación |
+|-------|---------------|
+| **Tests de integración** | Jest + Supertest, 28 tests que cubren auth, role scoping de estudiantes, y casos de error (409, 403, 404, 400) |
+| **Swagger / OpenAPI** | Spec completo en `api/src/docs/swagger.ts`, disponible en `/api/docs` |
+| **Logs estructurados** | `pino` con `pino-http` — JSON en producción, pretty en desarrollo, deshabilitado en test |
+| **Paginación y búsqueda** | `GET /api/estudiantes?page=1&limit=20&search=ana&sedeId=x&estado=ACTIVO` |
+| **Docker Compose** | `docker compose up --build` levanta PostgreSQL + API + Frontend con seed automático |
+| **API externa** | `POST /api/external/import` consume `dummyjson.com/users`, importa como estudiantes, evita duplicados |
+| **Frontend completo** | Edición de estudiantes, gestión de sedes, registro de usuarios, dashboard de stats |
+
+---
+
 ## Endpoints de la API
 
 | Método | Ruta                      | Auth | Roles             | Descripción                        |
@@ -257,5 +278,7 @@ git merge --no-ff feat/auth-jwt -m "feat(auth): merge JWT authentication"
 | GET    | /api/estudiantes/:id      | Sí   | ADMIN, OPERADOR   | Ver detalle                        |
 | PUT    | /api/estudiantes/:id      | Sí   | ADMIN, OPERADOR   | Actualizar                         |
 | DELETE | /api/estudiantes/:id      | Sí   | ADMIN, OPERADOR   | Eliminar                           |
-| GET    | /api/stats                | Sí   | ADMIN             | Estadísticas agregadas             |
+| GET    | /api/stats                | Sí   | ADMIN             | Estadísticas agregadas por sede y estado |
+| POST   | /api/external/import      | Sí   | ADMIN             | Importar estudiantes desde dummyjson.com |
+| GET    | /api/docs                 | No   | —                 | Swagger UI interactivo             |
 | GET    | /health                   | No   | —                 | Health check                       |

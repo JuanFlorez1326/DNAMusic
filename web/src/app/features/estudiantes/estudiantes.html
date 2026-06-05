@@ -44,28 +44,37 @@
       <table>
         <thead>
           <tr>
-            <th>Nombre</th><th>Email</th><th>Documento</th><th>Teléfono</th>
-            <th>Sede</th><th>Programa</th><th>Estado</th><th>Inscripción</th><th>Acciones</th>
+            <th class="col-nombre">Nombre</th>
+            <th class="col-contacto">Contacto</th>
+            <th class="col-sede">Sede</th>
+            <th class="col-programa">Programa</th>
+            <th class="col-estado">Estado</th>
+            <th class="col-fecha">Inscripción</th>
+            <th class="col-acciones">Acciones</th>
           </tr>
         </thead>
         <tbody>
           @for (est of estudiantes(); track est.id) {
             <tr>
-              <td>{{ est.nombreCompleto }}</td>
-              <td>{{ est.email }}</td>
-              <td>{{ est.documento }}</td>
-              <td>{{ est.telefono }}</td>
+              <td>
+                <div class="cell-primary">{{ est.nombreCompleto }}</div>
+                <div class="cell-secondary">{{ est.documento }}</div>
+              </td>
+              <td>
+                <div class="cell-primary">{{ est.email }}</div>
+                <div class="cell-secondary">{{ est.telefono }}</div>
+              </td>
               <td>{{ est.sede?.nombre ?? '—' }}</td>
               <td>{{ est.programa }}</td>
               <td><span [class]="'badge ' + estadoClass(est.estado)">{{ est.estado }}</span></td>
-              <td>{{ est.fechaInscripcion | date: 'dd/MM/yyyy' }}</td>
+              <td>{{ est.fechaInscripcion | date: 'dd/MM/yy' }}</td>
               <td class="actions">
                 <button class="btn-edit" (click)="openEdit(est)">Editar</button>
                 <button class="btn-danger-sm" (click)="deleteEstudiante(est.id, est.nombreCompleto)">Eliminar</button>
               </td>
             </tr>
           } @empty {
-            <tr><td colspan="9" class="empty">No se encontraron estudiantes.</td></tr>
+            <tr><td colspan="7" class="empty">No se encontraron estudiantes.</td></tr>
           }
         </tbody>
       </table>

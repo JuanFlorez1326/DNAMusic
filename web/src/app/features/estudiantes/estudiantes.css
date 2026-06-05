@@ -113,6 +113,26 @@ td {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #1e293b;
   color: #cbd5e1;
+  vertical-align: top;
+}
+
+.col-nombre    { width: 22%; }
+.col-contacto  { width: 22%; }
+.col-sede      { width: 14%; }
+.col-programa  { width: 16%; }
+.col-estado    { width: 10%; }
+.col-fecha     { width: 8%; }
+.col-acciones  { width: 8%; }
+
+.cell-primary {
+  color: #e2e8f0;
+  font-weight: 500;
+}
+
+.cell-secondary {
+  color: #64748b;
+  font-size: 0.75rem;
+  margin-top: 0.15rem;
 }
 
 tr:hover td {
