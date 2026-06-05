@@ -68,9 +68,11 @@
               <td>{{ est.programa }}</td>
               <td><span [class]="'badge ' + estadoClass(est.estado)">{{ est.estado }}</span></td>
               <td>{{ est.fechaInscripcion | date: 'dd/MM/yy' }}</td>
-              <td class="actions">
-                <button class="btn-edit" (click)="openEdit(est)">Editar</button>
-                <button class="btn-danger-sm" (click)="deleteEstudiante(est.id, est.nombreCompleto)">Eliminar</button>
+              <td>
+                <div class="actions">
+                  <button class="btn-edit" (click)="openEdit(est)">Editar</button>
+                  <button class="btn-danger-sm" (click)="deleteEstudiante(est.id, est.nombreCompleto)">Eliminar</button>
+                </div>
               </td>
             </tr>
           } @empty {

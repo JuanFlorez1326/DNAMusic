@@ -203,7 +203,7 @@ tr:hover td {
 
 .btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.actions { display: flex; gap: 0.4rem; }
+.actions { display: flex; gap: 0.4rem; white-space: nowrap; }
 
 .btn-edit {
   padding: 0.2rem 0.5rem;
