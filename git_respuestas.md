@@ -122,31 +122,33 @@ Prefiero `rebase` para ramas de feature cortas porque produce un historial linea
 
 ---
 
-## Comandos Git más relevantes del desarrollo de este proyecto
+## Comandos Git utilizados en el desarrollo de este proyecto
+
+El proyecto se desarrolló con commits incrementales directamente en `main`, sin ramas de feature:
 
 ```bash
-# Inicializar repo
+# Inicializar repo y conectar al remoto
 git init
-git remote add origin https://github.com/usuario/dnamusic-erp.git
+git remote add origin https://github.com/juanks339/dnamusic-erp.git
 
-# Flujo de trabajo por feature
-git checkout -b feat/auth-jwt
-git add api/src/controllers/auth.controller.ts api/src/middlewares/auth.middleware.ts
-git commit -m "feat(auth): implement JWT login with bcrypt hashing and rate limiting"
-git push -u origin feat/auth-jwt
+# Flujo real usado: commit directo a main
+git add <archivos>
+git commit -m "feat: API configuration"
+git push origin main
 
-# Ver historial limpio
-git log --oneline --graph --decorate
+# Ver historial
+git log --oneline
 
-# Revisar qué cambié antes de hacer commit
+# Revisar cambios antes de hacer commit
 git diff
 git diff --staged
 
 # Deshacer cambios en un archivo (sin perder otros cambios)
 git checkout -- api/src/app.ts
 
-# Stash para cambiar de rama con trabajo en progreso
+# Stash para pausar trabajo en progreso
 git stash
-git checkout main
 git stash pop
 ```
+
+**Nota:** Para un proyecto en equipo aplicaría el flujo de ramas descrito en las secciones anteriores. En este caso, al ser una prueba técnica individual con entregas incrementales, trabajé directamente sobre `main` para mantener el historial simple.
