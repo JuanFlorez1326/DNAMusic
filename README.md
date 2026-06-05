@@ -83,7 +83,7 @@ npm start
 
 ### Framework: Express + TypeScript
 
-Elegí Express sobre NestJS para mantener el proyecto simple y sin magia implícita. Para una prueba técnica es más fácil de explicar cada línea que con los decoradores de NestJS.
+Elegí Express sobre NestJS para mantener el proyecto simple y sin magia implícita. Para una prueba técnica es más fácil de explicar cada línea que con los decoradores de NestJS.  
 
 ### ORM: Prisma
 
